@@ -25,7 +25,7 @@
     "affected_functions": ["notifyRewardAmount", "distribute", "deliverBribes"],
     "affected_lines": ["Voter.sol:315-329", "Bribe.sol:41-60"],
     "root_cause": "missing-trigger-first-epoch",
-    "description": "Voter.distribute() only calls deliverBribes() when VELO emission claimable rewards exceed zero. VELO emissions start in epoch 2+. Therefore, bribes deposited during epoch 0 have no trigger to be delivered to the Gauge, and there is no alternative claim mechanism. Note: M-08 generalizes this issue to any epoch where the VELO threshold is not met.",
+    "description": "Voter.distribute() only calls deliverBribes() when VELO emission claimable rewards exceed zero. VELO emissions start in epoch 2+. Therefore, bribes deposited during epoch 0 have no trigger to be delivered to the Gauge, and there is no alternative claim mechanism. Note: M-07 generalizes this issue to any epoch where the VELO threshold is not met.",
     "impact": "All bribe rewards deposited during the first epoch are permanently locked in the Bribe contract. There is no admin function or alternative path to recover them.",
     "recommendation": "Allow deliverBribes() to be called independently of VELO emission thresholds, or add a manual trigger for first-epoch bribes.",
     "tier": "impressive",
