@@ -12,7 +12,7 @@ Velodrome is a next-generation AMM on Optimism, forked from Solidly (ve(3,3) mod
 | PairFees.sol | 23 | Holds trading fees for a pair. Fees are claimed by the Gauge, not LPs directly. |
 | Router.sol | 370 | User-facing router with slippage protection, deadlines, multi-hop swaps, WETH wrapping. |
 | VelodromeLibrary.sol | 89 | Helper functions: pair address computation, reserve sorting, swap amount calculations. |
-| PairFactory.sol | 82 | Factory for deploying Pair contracts. Manages fees, pausing, and pair registry. |
+| factories/PairFactory.sol | 82 | Factory for deploying Pair contracts. Manages fees, pausing, and pair registry. |
 
 ### ve(3,3) Tokenomics Layer
 
@@ -36,7 +36,7 @@ VotingEscrow.sol, Minter.sol, RewardsDistributor.sol, Velo.sol, governance contr
 
 **Bribes**: External incentives deposited by protocols to attract votes to their pool's Gauge. Distributed to voters proportionally per epoch.
 
-**Epochs**: Weekly periods (7 days). Voting, bribe distribution, and emission allocation operate on epoch boundaries.
+**Epochs**: Weekly periods (7 days). Voting, bribe distribution, and emission allocation operate on epoch boundaries. Note: reward DURATION within each epoch is 5 days (see `DURATION` constant in Gauge.sol), not the full 7-day epoch length.
 
 **Voter**: The coordination hub. Creates Gauges/Bribes for new pairs, aggregates votes, triggers emission distribution, and delivers bribes.
 
