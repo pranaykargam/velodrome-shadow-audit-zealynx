@@ -1,81 +1,55 @@
-# Velodrome contest details
-- $71,250 USDC main award pot
-- $3,750 USDC gas optimization award pot
-- Join [C4 Discord](https://discord.gg/code4rena) to register
-- Submit findings [using the C4 form](https://code4rena.com/contests/2022-05-velodrome-finance-contest/submit)
-- [Read our guidelines for more details](https://docs.code4rena.com/roles/wardens)
-- Starts May 23, 2022 20:00 UTC
-- Ends May 30, 2022 19:59 UTC
+# Velodrome Finance
 
-## Contest Scope
+Velodrome is a next-generation AMM on Optimism, forked from Solidly (ve(3,3) model). It combines a Uniswap V2-style constant product AMM with a vote-escrow token economics layer where veNFT holders direct emissions to liquidity pools.
 
-  Native Token
-  - `Velo.sol` (62 lines)
-  - `VotingEscrow.sol` (868 lines, lib: Base64)
+## Architecture
 
-  Pair
-  - `Pair.sol` (416 lines, lib: Math)
-  - `PairFees.sol` (23 lines)
-  - `factories/PairFactory.sol` (82 lines)
-  - `Router.sol` (370 lines, lib: Math)
-  - `VelodromeLibrary.sol` (89 lines)
+### AMM Core (Uniswap V2 derivative)
 
-  Emissions
-  - `RewardsDistributor.sol` (260 lines, lib: Math)
-  - `Minter.sol` (111 lines; lib: Math)
+| Contract | SLOC | Description |
+|----------|------|-------------|
+| Pair.sol | 416 | AMM pair contract. Constant product (x*y=k) for volatile pairs, stableswap curve for stable pairs. Handles mint, burn, swap. |
+| PairFees.sol | 23 | Holds trading fees for a pair. Fees are claimed by the Gauge, not LPs directly. |
+| Router.sol | 370 | User-facing router with slippage protection, deadlines, multi-hop swaps, WETH wrapping. |
+| VelodromeLibrary.sol | 89 | Helper functions: pair address computation, reserve sorting, swap amount calculations. |
+| PairFactory.sol | 82 | Factory for deploying Pair contracts. Manages fees, pausing, and pair registry. |
 
-  Voting
-  - `Gauge.sol` (545 lines, lib: Math)
-  - `factories/GaugeFactory.sol` (26 lines)
-  - `Bribe.sol` (85 lines)
-  - `factories/BribeFactory.sol` (9 lines)
-  - `Voter.sol` (304 lines, lib: Math)
+### ve(3,3) Tokenomics Layer
 
-  Governance
-  - `VeloGovernor.sol` (50 lines, lib: L2Governor governance)
+| Contract | SLOC | Description |
+|----------|------|-------------|
+| Gauge.sol | 545 | Staking contract for LP tokens. Distributes VELO emissions to stakers. Tracks voting state for reward eligibility. |
+| Bribe.sol | 85 | Holds external bribe rewards for voters. Rewards distributed per epoch based on vote weight. |
+| Voter.sol | 304 | Central coordination: gauge creation, vote accounting, emission distribution, bribe delivery. |
 
-  Redemption (WeVE -> VELO)
-  - `redeem/RedemptionSender.sol` (44 lines, lib: LayerZero)
-  - `redeem/RedemptionReceiver.sol` (99 lines, lib: LayerZero)
+### Out of Scope
 
-### New Formula
-  
-  The only new formula we introduce is for the emissions schedule:
+VotingEscrow.sol, Minter.sol, RewardsDistributor.sol, Velo.sol, governance contracts, and redemption contracts are NOT part of this shadow audit.
 
-  $\frac{1}{2} * weekly * (\frac{veTotal}{veloTotal})^3$
+**Total in scope: ~1,914 SLOC across 8 contracts**
 
-  where
+## Key Concepts
 
-  $veTotal$ is the total locked supply of VELO and
+**Volatile vs Stable Pairs**: Pair.sol supports two curve types. Volatile pairs use `x * y = k` (same as Uniswap V2). Stable pairs use `x^3*y + y^3*x = k` for low-slippage stablecoin swaps.
 
-  $veloTotal$ is the total supply of VELO
+**Gauges**: LP token staking contracts. When users stake LP tokens in a Gauge, they earn VELO emissions proportional to their share.
 
-### ERC-20 Standard 
+**Bribes**: External incentives deposited by protocols to attract votes to their pool's Gauge. Distributed to voters proportionally per epoch.
 
-  VELO is the native token of Velodrome and does conform to the ERC-20 standard
+**Epochs**: Weekly periods (7 days). Voting, bribe distribution, and emission allocation operate on epoch boundaries.
 
-## Our Unique Approach
+**Voter**: The coordination hub. Creates Gauges/Bribes for new pairs, aggregates votes, triggers emission distribution, and delivers bribes.
 
-  **Gauges/Bribes/Voting**
-  - Staggered epoch for Gauges/Bribes to ensure rewards go to the right people
-  - Added Compound-style weighted NFT governance for killing "bad" gauges. This governance uses block.timestamp instead of block.number because it's on an L2
-  - Removed veNFT "boost" for LP staking
-  - Gauges can be added for any address for emergency DAO
-  - Removed negative voting
+## Fee Structure
 
-  **Emissions**
-  - Updated emissions schedule
-  - Added core team emissions
+- Default volatile fee: 30 basis points (0.3%)
+- Default stable fee: 1 basis point (0.01%)
+- Fees go to PairFees contract, claimed by the Gauge for distribution
 
-  **Pair**
-  - Variable fees for stable/volatile pairs
+## Running Tests
 
-  **Distribution**
-  - Added two "redemption" contracts for WeVE (veDAO token) -> VELO+USDC which uses LayerZero
-
-## Areas of Concern
-
-  As we're not changing any of the core swap logic, the bulk of our security concerns relate to the native token emissions, governance, and distribution:
-  - `Gauge.sol` and `Bribe.sol`, which introduce new logic related to how external bribes and voting work
-  - `VotingEscrow.sol`, which adds compatibility with OZ/Comp-style governance tools like Tally
-  - `RedemptionSender.sol` and `RedemptionReceiver.sol` which both use LayerZero for cross-chain messaging
+```bash
+cd contracts
+npm install
+npx hardhat test
+```
