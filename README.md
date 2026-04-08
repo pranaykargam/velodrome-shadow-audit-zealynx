@@ -40,6 +40,33 @@ VotingEscrow.sol, Minter.sol, RewardsDistributor.sol, Velo.sol, governance contr
 
 **Voter**: The coordination hub. Creates Gauges/Bribes for new pairs, aggregates votes, triggers emission distribution, and delivers bribes.
 
+## Gauge Reward Mechanics
+
+Gauge.sol uses a **rewardPerToken accumulator** pattern (similar to Synthetix staking). Each reward token has a `rewardRate` (tokens per second) and a cumulative `rewardPerTokenStored`. A user's earned rewards = `balance * (rewardPerTokenStored - userRewardPerTokenPaid)`. Checkpoints track each user's `balance` and `voted` status at every state change. Rewards only accrue while the user's checkpoint `voted` flag is true. The flag is set by the Voter contract via `setVoteStatus()`.
+
+## Reward Flow
+
+```
+Protocols deposit bribes -> Bribe.notifyRewardAmount()
+                                   |
+Epoch ends -> Voter.distribute() -> deliverBribes() -> transfers from Bribe to Gauge
+                                   |
+Users claim -> Gauge.getReward()
+```
+
+Bribe.sol has no standalone claim mechanism. Rewards move from Bribe to Gauge only via the Voter.distribute() -> deliverBribes() path.
+
+## Reading Order
+
+Start with **Pair.sol** and **Router.sol** (familiar Uniswap V2 patterns). Then read **Voter.sol** to understand the coordination layer. Finally, deep-dive **Gauge.sol** and **Bribe.sol** for the reward mechanics.
+
+## What to Look For
+
+- Initialization patterns across all contracts (who can call setup functions?)
+- Who can call permissionless functions and at what cost
+- How rewards flow from deposit to claim across contracts
+- What assumptions checkpoint updates make about previous state
+
 ## Fee Structure
 
 - Default volatile fee: 30 basis points (0.3%)

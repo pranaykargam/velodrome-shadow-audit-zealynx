@@ -14,7 +14,7 @@
     "tier": "must-find",
     "cfamm_connection": "indirect",
     "educational_note": "Off-by-one errors in checkpoint systems are a classic vulnerability class. The Uniswap V2 build module doesn't use checkpoints, but the concept of reading the 'previous' value vs 'current' value in storage arrays is fundamental. The lesson: when code references array[index], always verify whether it should be array[index] or array[index - 1]. Test with concrete values: if _nCheckPoints is 2, should we read slot 2 (uninitialized) or slot 1 (last written)?",
-    "build_module_ref": "Section 3 (Pair: State and Initialization) covers storage patterns. This finding extends that knowledge to checkpoint-based accounting."
+    "build_module_ref": "Section 3 covers storage layout fundamentals. Checkpoint-based indexed storage extends these concepts to versioned state tracking."
   },
   {
     "id": "H-02",
@@ -113,9 +113,9 @@
     "description": "deliverBribes() and getReward() loop through all reward tokens. If any single token transfer reverts (malicious token or paused token), the entire function reverts. Combined with M-02 (permissionless reward token addition), an attacker can add a reverting token to block all reward operations.",
     "impact": "Complete DoS of reward distribution and claims. All legitimate rewards are blocked by a single malicious token until admin intervention.",
     "recommendation": "Use try/catch around individual token transfers in the loop, or implement a pull-based claim pattern where users claim per-token.",
-    "tier": "impressive",
+    "tier": "must-find",
     "cfamm_connection": "moderate",
-    "educational_note": "This is a composability bug: M-02 (fill rewards with garbage) + M-04 (one revert blocks all) combine into a critical DoS chain. In Uniswap V2, the pair only deals with exactly 2 tokens, avoiding unbounded loops entirely. The lesson: loops over external calls are dangerous. Each iteration is an opportunity for revert, and one failure can cascade to block everything.",
+    "educational_note": "This is a composability bug: M-02 (permissionless array fill) + M-04 (one revert blocks all) combine into a critical DoS chain. For every loop containing an external call, ask: does one revert block all iterations? If yes, and the loop contents are attacker-controlled (see M-02), this is an immediate DoS. In Uniswap V2, the pair only deals with exactly 2 tokens, avoiding unbounded loops entirely.",
     "build_module_ref": "Section 7 (Pair: The Swap) covers the two-token swap pattern. Velodrome's multi-token reward loop is the anti-pattern."
   },
   {
@@ -149,7 +149,7 @@
     "recommendation": "Restrict notifyRewardAmount to authorized callers, or add a minimum reward amount threshold.",
     "tier": "impressive",
     "cfamm_connection": "none",
-    "educational_note": "This is an economic griefing attack. The code is 'correct' in the sense that it does exactly what it says (add rewards, reset period). But the permissionless access + L2 cheap gas makes it economically viable to grief. The lesson: correct code can still be vulnerable if the economic assumptions (calling this costs meaningful gas) don't hold in all deployment contexts.",
+    "educational_note": "This is an economic griefing attack. The code is 'correct' in the sense that it does exactly what it says (add rewards, reset period). But the permissionless access + L2 cheap gas makes it economically viable to grief. The lesson: correct code can still be vulnerable if the economic assumptions don't hold. For every permissionless function, calculate the cost-to-grief ratio on the deployment chain. L1 vs L2 gas costs change the economics significantly.",
     "build_module_ref": null
   },
   {
@@ -217,7 +217,7 @@
     "recommendation": "Track actual remaining rewards precisely rather than recalculating from rate * remaining_time, or use higher-precision arithmetic for rate storage.",
     "tier": "expert",
     "cfamm_connection": "none",
-    "educational_note": "Reward rate math with time-based distribution is notoriously tricky. The lesson: when a function recalculates a rate mid-stream, trace the math with concrete numbers. Pick a specific scenario (e.g., 100 tokens over 5 days, 3 days in, add 50 more). Calculate what each staker should receive. Then verify the code produces the same result. Integer division losses compound in ways that are invisible without concrete examples.",
+    "educational_note": "Reward rate math with time-based distribution is notoriously tricky. The lesson: when a function recalculates a rate mid-stream, trace the math with concrete numbers. Pick a specific scenario (e.g., 100 tokens over 5 days, 3 days in, add 50 more). Calculate what each staker should receive, then verify the code produces the same result.",
     "build_module_ref": null
   }
 ]
