@@ -6,21 +6,25 @@ Velodrome is a next-generation AMM on Optimism, forked from Solidly (ve(3,3) mod
 
 ### AMM Core (Uniswap V2 derivative)
 
-| Contract | SLOC | Description |
-|----------|------|-------------|
-| Pair.sol | 416 | AMM pair contract. Constant product (x*y=k) for volatile pairs, stableswap curve for stable pairs. Handles mint, burn, swap. |
-| PairFees.sol | 23 | Holds trading fees for a pair. Fees are claimed by the Gauge, not LPs directly. |
-| Router.sol | 370 | User-facing router with slippage protection, deadlines, multi-hop swaps, WETH wrapping. |
-| VelodromeLibrary.sol | 89 | Helper functions: pair address computation, reserve sorting, swap amount calculations. |
-| factories/PairFactory.sol | 82 | Factory for deploying Pair contracts. Manages fees, pausing, and pair registry. |
+
+| Contract                  | SLOC | Description                                                                                                                  |
+| ------------------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Pair.sol                  | 416  | AMM pair contract. Constant product (x*y=k) for volatile pairs, stableswap curve for stable pairs. Handles mint, burn, swap. |
+| PairFees.sol              | 23   | Holds trading fees for a pair. Fees are claimed by the Gauge, not LPs directly.                                              |
+| Router.sol                | 370  | User-facing router with slippage protection, deadlines, multi-hop swaps, WETH wrapping.                                      |
+| VelodromeLibrary.sol      | 89   | Helper functions: pair address computation, reserve sorting, swap amount calculations.                                       |
+| factories/PairFactory.sol | 82   | Factory for deploying Pair contracts. Manages fees, pausing, and pair registry.                                              |
+
 
 ### ve(3,3) Tokenomics Layer
 
-| Contract | SLOC | Description |
-|----------|------|-------------|
-| Gauge.sol | 545 | Staking contract for LP tokens. Distributes VELO emissions to stakers. Tracks voting state for reward eligibility. |
-| Bribe.sol | 85 | Holds external bribe rewards for voters. Rewards distributed per epoch based on vote weight. |
-| Voter.sol | 304 | Central coordination: gauge creation, vote accounting, emission distribution, bribe delivery. |
+
+| Contract  | SLOC | Description                                                                                                        |
+| --------- | ---- | ------------------------------------------------------------------------------------------------------------------ |
+| Gauge.sol | 545  | Staking contract for LP tokens. Distributes VELO emissions to stakers. Tracks voting state for reward eligibility. |
+| Bribe.sol | 85   | Holds external bribe rewards for voters. Rewards distributed per epoch based on vote weight.                       |
+| Voter.sol | 304  | Central coordination: gauge creation, vote accounting, emission distribution, bribe delivery.                      |
+
 
 ### Out of Scope
 
@@ -80,3 +84,5 @@ cd contracts
 npm install
 npx hardhat test
 ```
+
+# velodrome-shadow-audit-zealynx

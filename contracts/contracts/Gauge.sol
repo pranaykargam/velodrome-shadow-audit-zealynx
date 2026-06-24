@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.13;
+pragma solidity ^0.8.24;
 
 import './libraries/Math.sol';
 import './interfaces/IBribe.sol';
@@ -127,7 +127,7 @@ contract Gauge {
         _;
         _unlocked = 1;
     }
-
+// @audit claimFees() — permissionless
     function claimFees() external lock returns (uint claimed0, uint claimed1) {
         return _claimFees();
     }
@@ -299,6 +299,8 @@ contract Gauge {
         return (rewardPerTokenCheckpoints[token][lower].rewardPerToken, rewardPerTokenCheckpoints[token][lower].timestamp);
     }
 
+ // 🔴  @audit "Reads checkpoints[account][_nCheckPoints] (uninitialized slot) instead of _nCheckPoints - 1."
+
     function _writeCheckpoint(address account, uint balance) internal {
         uint _timestamp = block.timestamp;
         uint _nCheckPoints = numCheckpoints[account];
@@ -306,6 +308,7 @@ contract Gauge {
         if (_nCheckPoints > 0 && checkpoints[account][_nCheckPoints - 1].timestamp == _timestamp) {
             checkpoints[account][_nCheckPoints - 1].balanceOf = balance;
         } else {
+            // @audit 
             bool prevVoteStatus = (_nCheckPoints > 0) ? checkpoints[account][_nCheckPoints].voted : false;
             checkpoints[account][_nCheckPoints] = Checkpoint(_timestamp, balance, prevVoteStatus);
             numCheckpoints[account] = _nCheckPoints + 1;
@@ -383,6 +386,7 @@ contract Gauge {
         return balanceOf[account];
     }
 
+// @audit batchRewardPerToken(address token, uint maxRuns) — permissionless, no lock
     function batchRewardPerToken(address token, uint maxRuns) external {
         (rewardPerTokenStored[token], lastUpdateTime[token])  = _batchRewardPerToken(token, maxRuns);
     }
@@ -587,13 +591,15 @@ contract Gauge {
         return _remaining * rewardRate[token];
     }
 
+
+// @audit notifyRewardAmount(address token, uint amount) — permissionless
     function notifyRewardAmount(address token, uint amount) external lock {
         require(token != stake);
         require(amount > 0);
         if (!isReward[token]) {
             require(rewards.length < MAX_REWARD_TOKENS, "too many rewards tokens");
         }
-        // rewards accrue only during the bribe period
+
         uint bribeStart = block.timestamp - (block.timestamp % (7 days)) + BRIBE_LAG;
         uint adjustedTstamp = block.timestamp < bribeStart ? bribeStart : bribeStart + 7 days;
         if (rewardRate[token] == 0) _writeRewardPerTokenCheckpoint(token, 0, adjustedTstamp);
