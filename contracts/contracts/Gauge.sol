@@ -127,7 +127,7 @@ contract Gauge {
         _;
         _unlocked = 1;
     }
-// @audit claimFees() — permissionless
+//🔴 @audit claimFees() — permissionless
     function claimFees() external lock returns (uint claimed0, uint claimed1) {
         return _claimFees();
     }
@@ -185,6 +185,7 @@ contract Gauge {
         }
     }
 
+// 🔴 @audit "MEDIUM — setVoteStatus only patches the last checkpoint"
     function setVoteStatus(address account, bool voted) external {
         require(msg.sender == voter);
         uint nCheckpoints = numCheckpoints[account];
@@ -347,7 +348,8 @@ contract Gauge {
         return Math.min(block.timestamp, periodFinish[token]);
     }
 
-    function getReward(address account, address[] memory tokens) external lock {
+// @audit MEDIUM — getReward intentionally bypasses lock
+function getReward(address account, address[] memory tokens) external lock {
         require(msg.sender == account || msg.sender == voter);
         _unlocked = 1;
         IVoter(voter).distribute(address(this));
@@ -549,14 +551,16 @@ contract Gauge {
         withdraw(balanceOf[msg.sender]);
     }
 
+    // @audit “Make withdraw() use the same lock protection as deposit() so the state changes stay consistent and there is no state mismatch.”
+    // MEDIUM — withdraw() splits lock coverage
     function withdraw(uint amount) public {
-        _updateRewardForAllTokens();
+        _updateRewardForAllTokens(); // no lock
 
         uint tokenId = 0;
         if (amount == balanceOf[msg.sender]) {
             tokenId = tokenIds[msg.sender];
         }
-        withdrawToken(amount, tokenId);
+        withdrawToken(amount, tokenId); // locked
     }
 
     function withdrawToken(uint amount, uint tokenId) public lock {
@@ -628,7 +632,7 @@ contract Gauge {
 
         emit NotifyReward(msg.sender, token, amount);
     }
-
+// 🔴 @audit LOW — swapOutRewardToken does not migrate balances
     function swapOutRewardToken(uint i, address oldToken, address newToken) external {
         require(msg.sender == IGaugeFactory(factory).team(), 'only team');
         require(rewards[i] == oldToken);
@@ -650,6 +654,8 @@ contract Gauge {
             rewards.push(token);
         }
     }
+
+    // 🔴 @audit  LOW  _notifyBribeAmount skips balance invariant
 
     function _notifyBribeAmount(address token, uint amount, uint epochStart) internal {
         if (block.timestamp >= periodFinish[token]) {
