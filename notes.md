@@ -297,7 +297,7 @@ Epoch boundary: if user stakes 1 second before epoch end, do they get rewards?
 
 
 
-# The whole protocol in one picture⭐️
+# The whole protocol in one picture ⭐️
    `VELO`   => VELO Token (The protocol token that users lock and earn)
 
           │
@@ -308,10 +308,10 @@ Epoch boundary: if user stakes 1 second before epoch end, do they get rewards?
 
           │
           ▼
-  `veNFT`
+  `veNFT` =>(NFT that represents your locked VELO position and voting power.)
           │
           ▼
-      `Voter.sol`
+      `Voter.sol` => (Election system of the protocol.)
           │
      votes decide
           │
@@ -327,4 +327,15 @@ ETH-USDC   ETH-DAI
      │         │
      ▼         ▼
  `receive rewards`
+
+# My audit checklist for every function:
+
+ ## Step 1: What is the purpose?
+ ## Step 2: Who can call it?
+ ## Step 3: What state changes?
+ ## Step 4: What external calls exist?
+ ## Step 5: What invariant should hold?
+ ## Step 6: What if values are weird?
+ ## Step 7: Follow the money
+ ## Step 8: Trace the complete flow
 
