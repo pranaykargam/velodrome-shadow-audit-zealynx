@@ -296,3 +296,35 @@ Epoch boundary: if user stakes 1 second before epoch end, do they get rewards?
 | Epoch boundary          | DURATION=5days vs 7-day epoch     | Reward calculation off-by-one             |
 
 
+
+# The whole protocol in one picture⭐️
+   `VELO`   => VELO Token (The protocol token that users lock and earn)
+
+          │
+          ▼
+   `VotingEscrow`=> (Locks VELO and creates veNFTs that represent voting power) 
+
+   example: 1000 VELO locked for 4 years -> veNFT #123
+
+          │
+          ▼
+  `veNFT`
+          │
+          ▼
+      `Voter.sol`
+          │
+     votes decide
+          │
+          ▼
+       `Gauges`
+      /      \
+     /        \
+ETH-USDC   ETH-DAI
+ Gauge      Gauge
+     │         │
+     ▼         ▼
+   LPs       LPs
+     │         │
+     ▼         ▼
+ `receive rewards`
+

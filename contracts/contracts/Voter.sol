@@ -79,6 +79,7 @@ contract Voter {
         minter = _minter;
     }
 
+// @audit check : "require(_governor != address(0));" 
     function setGovernor(address _governor) public {
         require(msg.sender == governor);
         governor = _governor;
@@ -94,6 +95,8 @@ contract Voter {
         _reset(_tokenId);
         IVotingEscrow(_ve).abstain(_tokenId);
     }
+
+      // imp: high chance of fund loss vulnerabilitie
 
     function _reset(uint _tokenId) internal {
         address[] storage _poolVote = poolVote[_tokenId];
@@ -169,6 +172,7 @@ contract Voter {
         usedWeights[_tokenId] = uint256(_usedWeight);
     }
 
+  // imp: high chance of fund loss vulnerabilitie
     function vote(uint tokenId, address[] calldata _poolVote, uint256[] calldata _weights) external {
         require(IVotingEscrow(_ve).isApprovedOrOwner(msg.sender, tokenId));
         require(_poolVote.length == _weights.length);
@@ -185,6 +189,8 @@ contract Voter {
         isWhitelisted[_token] = true;
         emit Whitelisted(msg.sender, _token);
     }
+
+    // imp: high chance of fund loss vulnerabilitie
 
     function createGauge(address _pool) external returns (address) {
         require(gauges[_pool] == address(0x0), "exists");
@@ -253,6 +259,8 @@ contract Voter {
     mapping(address => uint) internal supplyIndex;
     mapping(address => uint) public claimable;
 
+
+  // imp: high chance of fund loss vulnerabilitie
     function notifyRewardAmount(uint amount) external {
         _safeTransferFrom(base, msg.sender, address(this), amount); // transfer the distro in
         uint256 _ratio = amount * 1e18 / totalWeight; // 1e18 adjustment is removed during claim
@@ -262,6 +270,7 @@ contract Voter {
         emit NotifyReward(msg.sender, base, amount);
     }
 
+  // imp: high chance of fund loss vulnerabilitie
     function updateFor(address[] memory _gauges) external {
         for (uint i = 0; i < _gauges.length; i++) {
             _updateFor(_gauges[i]);
@@ -312,6 +321,8 @@ contract Voter {
         }
     }
 
+
+  // imp: high chance of fund loss vulnerabilitie
     function distribute(address _gauge) public lock {
         require(isAlive[_gauge]); // killed gauges cannot distribute
         uint dayCalc = block.timestamp % (7 days);
