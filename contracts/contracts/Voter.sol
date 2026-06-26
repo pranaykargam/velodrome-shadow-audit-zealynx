@@ -98,6 +98,7 @@ contract Voter {
 
       // imp: high chance of fund loss vulnerabilitie
 
+
     function _reset(uint _tokenId) internal {
         address[] storage _poolVote = poolVote[_tokenId];
         uint _poolVoteCnt = _poolVote.length;

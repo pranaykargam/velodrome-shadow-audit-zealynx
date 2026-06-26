@@ -22,7 +22,7 @@ Code hint:
 
 ***
 
-### Issue 2 — setVoteStatus only updates last checkpoint
+### Issue 2 — 🟡 setVoteStatus only updates last checkpoint
 Severity: Medium
 What: setVoteStatus mutates only the last checkpoint or creates a zero-balance checkpoint, losing prior balance/voted context.
 Impact: earned() can miscompute rewards for earlier epochs; vote history becomes inaccurate.
@@ -33,7 +33,7 @@ Code hint:
 
 ***
 
-### Issue 3 — _writeCheckpoint reads uninitialized slot
+### Issue 3 — 🟡 _writeCheckpoint reads uninitialized slot
 Severity: Medium
 What: _writeCheckpoint reads checkpoints[account][_nCheckPoints].voted to set prevVoteStatus — that's the new slot (uninitialized).
 Impact: Prior voted state lost; subsequent reward logic may treat accounts as non-voted.
@@ -44,7 +44,7 @@ Code hint:
 
 ***
 
-### Issue 4 — getReward disables reentrancy guard around external call
+### Issue 4 — 🟡 getReward disables reentrancy guard around external call
 Severity: Medium
 What: getReward sets _unlocked = 1 before calling IVoter.distribute and then sets _unlocked back, effectively disabling the lock during an external call.
 Impact: Reentrancy possible during distribute(), enabling double-claims or state corruption.
@@ -66,7 +66,7 @@ Code hint:
 
 ***
 
-### Issue 6 — withdraw() splits lock coverage
+### Issue 6 —🟡 withdraw() splits lock coverage
 Severity: Medium
 What: withdraw() calls _updateRewardForAllTokens() outside of lock, then calls locked withdrawToken — leaves a reentrancy window.
 Impact: State mismatch or reentrancy during the window; possible incorrect reward or withdrawal behavior.
