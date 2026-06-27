@@ -330,12 +330,5 @@ ETH-USDC   ETH-DAI
 
 # My audit checklist for every function:
 
- ## Step 1: What is the purpose?
- ## Step 2: Who can call it?
- ## Step 3: What state changes?
- ## Step 4: What external calls exist?
- ## Step 5: What invariant should hold?
- ## Step 6: What if values are weird?
- ## Step 7: Follow the money
- ## Step 8: Trace the complete flow
+
 

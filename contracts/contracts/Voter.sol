@@ -96,7 +96,8 @@ contract Voter {
         IVotingEscrow(_ve).abstain(_tokenId);
     }
 
-      // imp: high chance of fund loss vulnerabilitie
+ 
+
 
 
     function _reset(uint _tokenId) internal {
@@ -261,7 +262,9 @@ contract Voter {
     mapping(address => uint) public claimable;
 
 
-  // imp: high chance of fund loss vulnerabilitie
+  // @audit check 🔴
+  // Missing access control on reward notification allows arbitrary reward injection and distribution griefing.
+  // Impact: reward timing manipulation, dust loss, and unfair distribution.
     function notifyRewardAmount(uint amount) external {
         _safeTransferFrom(base, msg.sender, address(this), amount); // transfer the distro in
         uint256 _ratio = amount * 1e18 / totalWeight; // 1e18 adjustment is removed during claim
@@ -271,7 +274,7 @@ contract Voter {
         emit NotifyReward(msg.sender, base, amount);
     }
 
-  // imp: high chance of fund loss vulnerabilitie
+ 
     function updateFor(address[] memory _gauges) external {
         for (uint i = 0; i < _gauges.length; i++) {
             _updateFor(_gauges[i]);
@@ -291,6 +294,8 @@ contract Voter {
     function updateGauge(address _gauge) external {
         _updateFor(_gauge);
     }
+
+    // @audit check 🔴
 
     function _updateFor(address _gauge) internal {
         require(isAlive[_gauge]); // killed gauges cannot be updated
@@ -323,7 +328,7 @@ contract Voter {
     }
 
 
-  // imp: high chance of fund loss vulnerabilitie
+ // @audit check 🔴
     function distribute(address _gauge) public lock {
         require(isAlive[_gauge]); // killed gauges cannot distribute
         uint dayCalc = block.timestamp % (7 days);
