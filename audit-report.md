@@ -1,9 +1,5 @@
 
 
-## Summary of Findings (short)
-- Total issues: 10 — 0 Critical, 4 High/Medium, 6 Low  
-- Main classes: permissioning, checkpoint logic, reentrancy/locking, reward accounting, token-swap invariants.  
-- Quick remediation priorities: (1) Locking & reentrancy, (2) access controls on permissionless functions, (3) checkpoint correctness.
 
 ***
 
@@ -55,16 +51,7 @@ Code hint:
 
 ***
 
-### Issue 5 — batchRewardPerToken is permissionless and unlocked
-Severity: Medium
-What: Anyone can call batchRewardPerToken which writes rewardPerTokenStored/lastUpdateTime without protection.
-Impact: Gas griefing, manipulated reward checkpoints, or inconsistent state if combined with other writers.
-Suggested quick fix:
-- Add access control and/or apply lock modifier.
-Code hint:
-- function batchRewardPerToken(address token, uint maxRuns) external lock { require(msg.sender == voter); ... }
 
-***
 
 ### Issue 6 —🟡 withdraw() splits lock coverage
 Severity: Medium
@@ -77,51 +64,13 @@ Code hint:
 
 ***
 
-### Issue 7 — notifyRewardAmount is permissionless
-Severity: Medium
-What: Anyone can call notifyRewardAmount(token, amount) (transfers required) which changes rewardRate and timing.
-Impact: Griefing by repeatedly changing reward schedules, or expensive state churn.
-Suggested quick fix:
-- Limit to authorized distributors: require(msg.sender == voter || msg.sender == IGaugeFactory(factory).team()).
-- Add sanity limits (max amount per epoch).
-Code hint:
-- require(authorized[msg.sender], "not authorized");
 
-***
 
-### Issue 8 — swapOutRewardToken does not migrate balances
-Severity: Low
-What: swapOutRewardToken reassigns rewards[i] without copying per-token accounting (stored rates, user pointers).
-Impact: Orphaned accounting, wrong rewards shown to users, possible reward loss/confusion.
-Suggested quick fix:
-- Prevent swap if token has non-zero accounting, or migrate rewardPerTokenStored/lastUpdateTime and update user mappings.
-Code hint:
-- require(rewardPerTokenNumCheckpoints[oldToken] == 0 && IERC20(oldToken).balanceOf(address(this)) == 0, "token in use");
 
-***
 
-### Issue 9 — _notifyBribeAmount skips balance checks
-Severity: Low
-What: _notifyBribeAmount sets rewardRate/periodFinish for bribe tokens but doesn't verify the contract holds the tokens.
-Impact: rewardRate may exceed real balance/DURATION; left() can be inconsistent.
-Suggested quick fix:
-- Mirror notifyRewardAmount checks: require(rewardRate <= IERC20(token).balanceOf(address(this)) / DURATION).
-- Set lastUpdateTime consistently to epochStart.
-Code hint:
-- uint balance = IERC20(token).balanceOf(address(this)); require(amount <= balance);
 
-***
 
-### Issue 10 — time math edge-cases in reward calculations
-Severity: Low
-What: reward/time math uses combinations of min/max and checkpoint timestamps that can misattribute small amounts around period boundaries.
-Impact: Minor rounding/time-slice inaccuracies; tricky test cases around 7-day boundaries.
-Suggested quick fix:
-- Consolidate time clipping into clear helper functions and add unit tests for boundary cases.
-Code hint:
-- helper clipToPeriod(uint t) internal view returns (uint) { return Math.min(periodFinish[token], Math.max(startTime, t)); }
 
-*** 
 
 // pair.sol
 
@@ -133,9 +82,12 @@ Count the hex digits after 0x — there are 65, not 64. A bytes32 literal must b
 Fix — use the correct, standard hash value (note it ends in c8, not c9):
 soliditybytes32 internal constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faa
 
+***
 
 02. `_safeTransfer — to == address(this) not excluded, and fee-on-transfer tokens break invariant accounting`
 Not a crash bug, but worth flagging: _update0/_update1 assume the full amount they pass actually lands in fees contract and is reflected 1:1 in the K-check balances. If token0/token1 is a fee-on-transfer or rebasing token, _balance0/_balance1 after the transfer won't match the accounting, and the K check in swap() can pass on a state that under-collateralizes LPs. This is a known footgun for Uniswap-V2-style pairs — worth a comment/guard if you intend to support arbitrary ERC20s, or an explicit allowlist if not.
+***
+
 
 // router.sol
 
@@ -183,6 +135,8 @@ The pair logic assumes that a token transfer of `amount` always credits exactly 
 - If support is desired, implement special handling based on actual balance deltas instead of assumed transfer amounts.  
 - Add tests for fee-on-transfer and rebasing token behavior so the limitation is enforced intentionally.[7][3][4]
 
+***
+
 02. 
 Use a **low severity** finding. 
 
@@ -213,6 +167,8 @@ Replace `assert` with:
 ```solidity
 require(weth.transfer(pair, amountETH), "Router: WETH_TRANSFER_FAILED");
 ```
+***
+
 
 
 03. 
@@ -241,6 +197,7 @@ Misleading reverts, wasted gas, and weaker price protection for intermediate hop
 Add a pair-existence check inside `getAmountsOut()`, or add per-hop minimums / re-quote at execution if stricter protection is needed.
 
 
+***
 
 04. 
 
