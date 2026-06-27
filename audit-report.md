@@ -123,3 +123,16 @@ Code hint:
 
 *** 
 
+// pair.sol
+
+1. `PERMIT_TYPEHASH` — malformed constant (won't compile / wrong digest)
+
+soliditybytes32 internal constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
+Count the hex digits after 0x — there are 65, not 64. A bytes32 literal must be exactly 32 bytes (64 hex chars). As written this either fails to compile or (depending on toolchain leniency) gets silently truncated/misinterpreted, which would make every permit() call compute the wrong EIP-712 digest and make signatures unverifiable/forgeable in unexpected ways.
+
+Fix — use the correct, standard hash value (note it ends in c8, not c9):
+soliditybytes32 internal constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faa
+
+
+02. `_safeTransfer — to == address(this) not excluded, and fee-on-transfer tokens break invariant accounting`
+Not a crash bug, but worth flagging: _update0/_update1 assume the full amount they pass actually lands in fees contract and is reflected 1:1 in the K-check balances. If token0/token1 is a fee-on-transfer or rebasing token, _balance0/_balance1 after the transfer won't match the accounting, and the K check in swap() can pass on a state that under-collateralizes LPs. This is a known footgun for Uniswap-V2-style pairs — worth a comment/guard if you intend to support arbitrary ERC20s, or an explicit allowlist if not.
