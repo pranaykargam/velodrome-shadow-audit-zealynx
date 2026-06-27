@@ -67,7 +67,7 @@ contract Router {
         (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
     }
 
-    // performs chained getAmountOut calculations on any number of pairs
+ // 04. @auditbug 01🔴
     function getAmountOut(uint amountIn, address tokenIn, address tokenOut) external view returns (uint amount, bool stable) {
         address pair = pairFor(tokenIn, tokenOut, true);
         uint amountStable;
@@ -82,7 +82,7 @@ contract Router {
         return amountStable > amountVolatile ? (amountStable, true) : (amountVolatile, false);
     }
 
-    // performs chained getAmountOut calculations on any number of pairs
+   //01. @auditbug🔴
     function getAmountsOut(uint amountIn, route[] memory routes) public view returns (uint[] memory amounts) {
         require(routes.length >= 1, 'Router: INVALID_PATH');
         amounts = new uint[](routes.length+1);
@@ -94,6 +94,8 @@ contract Router {
             }
         }
     }
+
+ 
 
     function isPair(address pair) external view returns (bool) {
         return IPairFactory(factory).isPair(pair);
@@ -203,6 +205,7 @@ contract Router {
         liquidity = IPair(pair).mint(to);
     }
 
+// 02. @auditbug🔴
     function addLiquidityETH(
         address token,
         bool stable,
@@ -310,8 +313,9 @@ contract Router {
         (amountToken, amountETH) = removeLiquidityETH(token, stable, liquidity, amountTokenMin, amountETHMin, to, deadline);
     }
 
-    // **** SWAP ****
-    // requires the initial amount to have already been sent to the first pair
+
+  // 03. @auditbug combination2🔴
+  // 04. @auditbug 02🔴
     function _swap(uint[] memory amounts, route[] memory routes, address _to) internal virtual {
         for (uint i = 0; i < routes.length; i++) {
             (address token0,) = sortTokens(routes[i].from, routes[i].to);
@@ -345,6 +349,7 @@ contract Router {
         _swap(amounts, routes, to);
     }
 
+// 03.  @auditbug🔴 combination1
     function swapExactTokensForTokens(
         uint amountIn,
         uint amountOutMin,

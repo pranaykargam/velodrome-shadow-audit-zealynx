@@ -136,3 +136,132 @@ soliditybytes32 internal constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370f
 
 02. `_safeTransfer — to == address(this) not excluded, and fee-on-transfer tokens break invariant accounting`
 Not a crash bug, but worth flagging: _update0/_update1 assume the full amount they pass actually lands in fees contract and is reflected 1:1 in the K-check balances. If token0/token1 is a fee-on-transfer or rebasing token, _balance0/_balance1 after the transfer won't match the accounting, and the K check in swap() can pass on a state that under-collateralizes LPs. This is a known footgun for Uniswap-V2-style pairs — worth a comment/guard if you intend to support arbitrary ERC20s, or an explicit allowlist if not.
+
+// router.sol
+
+
+01. 
+
+## Title
+`Pair invariant accounting breaks for fee-on-transfer / rebasing tokens`
+
+## Severity-  (low)
+
+
+## Affected files
+
+- `contracts/contracts/Pair.sol` 
+- `contracts/contracts/Rouetr.sol`
+
+## Affected functions
+
+- `_safeTransfer(...)` in `Pair.sol`.  
+- `_update(...)` / reserve update logic in `Pair.sol`.  
+- `swap(...)` in `Pair.sol`.
+
+## Description
+
+The pair logic assumes that a token transfer of `amount` always credits exactly `amount` to the recipient. With fee-on-transfer tokens, the received amount is smaller than expected, so the pair’s balance and reserve accounting diverge. Rebasing tokens can also change balances outside of swaps, which breaks the same assumptions. 
+
+## Vulnerable scenario
+
+1. A user creates a pool with a fee-on-transfer or rebasing token.  
+2. The pair records reserves as if transfers are exact.  
+3. A swap or liquidity action happens, but the actual credited balance differs from the amount used in the math.  
+4. The pair’s invariant checks and reserve updates operate on misleading values, so LP accounting becomes incorrect. 
+## Impact
+
+- LPs can end up with incorrect reserve accounting.  
+- Price quotes can become misleading.  
+- Liquidity may be under-collateralized relative to the pair’s internal accounting.  
+- Users may waste gas by interacting with unsupported token types. 
+
+## Recommendation
+
+- Explicitly **disallow** fee-on-transfer and rebasing tokens in the factory/router.  
+- Add a clear comment or revert guard if unsupported token types are detected.  
+- If support is desired, implement special handling based on actual balance deltas instead of assumed transfer amounts.  
+- Add tests for fee-on-transfer and rebasing token behavior so the limitation is enforced intentionally.[7][3][4]
+
+02. 
+Use a **low severity** finding. 
+
+## Title
+`WETH transfer uses assert() instead of require()`
+
+## Severity
+`Low`
+
+## Affected files
+`contracts/contracts/Router.sol` 
+
+## Affected functions
+`addLiquidityETH()`, any ETH-wrapping / multi-hop path that calls `weth.transfer(...)`
+
+## Description
+`assert(weth.transfer(...))` is used for an external call result. If the transfer fails, it reverts with a Panic instead of a clear error message. 
+
+## Vulnerable scenario
+A future or nonstandard WETH implementation returns `false`, or an edge case causes the transfer to fail, and the router reverts with an unhelpful panic. 
+
+## Impact
+Harder debugging, worse tooling behavior, and misleading revert semantics.
+
+## Recommendation
+Replace `assert` with:
+
+```solidity
+require(weth.transfer(pair, amountETH), "Router: WETH_TRANSFER_FAILED");
+```
+
+
+03. 
+
+
+
+## Title
+`No per-hop slippage check in multi-hop swap`
+
+## Affected files
+`contracts/contracts/Router.sol` 
+
+## Affected functions
+`getAmountsOut()`, `_swap()`, multi-hop swap entrypoints 
+
+## Description
+The router checks only the final output amount, not each hop. If an intermediate pair moves before execution, the route can still fail late or execute at a worse price.
+
+## Vulnerable scenario
+A multi-hop swap is quoted, then reserves on one hop change before execution. The router still uses the old amounts and only the final leg is protected.
+
+## Impact
+Misleading reverts, wasted gas, and weaker price protection for intermediate hops.
+
+## Recommendation
+Add a pair-existence check inside `getAmountsOut()`, or add per-hop minimums / re-quote at execution if stricter protection is needed.
+
+
+
+04. 
+
+## Title
+`No per-hop slippage check in multi-hop swap`
+
+## Affected files
+`contracts/contracts/Router.sol` 
+
+## Affected functions
+`getAmountsOut()`, `_swap()`, multi-hop swap entrypoints 
+
+## Description
+The router only checks the final output amount, not each hop. If an intermediate pool changes before execution, the route can still go through with a worse price. 
+
+## Vulnerable scenario
+A user quotes a multi-hop swap, then one intermediate pool moves before execution. The router still uses the old amounts. 
+
+## Impact
+Worse execution price, misleading revert, and extra gas wasted. 
+
+## Recommendation
+Add a pair-existence check in `getAmountsOut()`, or use per-hop minimums / re-quote at execution. 
+
