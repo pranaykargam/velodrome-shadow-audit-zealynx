@@ -70,7 +70,7 @@ Code hint:
 
 
 
-// pair.sol
+# pair.sol
 
 1. `PERMIT_TYPEHASH` — malformed constant (won't compile / wrong digest)
 
@@ -87,12 +87,10 @@ Not a crash bug, but worth flagging: _update0/_update1 assume the full amount th
 ***
 
 
-// router.sol
+# router.sol
 
 
-01. 
-
-## Pair invariant accounting breaks for fee-on-transfer / rebasing tokens
+01. ## 🟡 `Pair invariant accounting breaks for fee-on-transfer / rebasing tokens`
 
 ## Severity-  (low)
 
@@ -135,10 +133,7 @@ The pair logic assumes that a token transfer of `amount` always credits exactly 
 
 ***
 
-02. 
-
-
-## WETH transfer uses assert() instead of require()
+02. ## 🟡 `WETH transfer uses assert() instead of require()`
 
 ## Severity
 `Low`
@@ -168,11 +163,7 @@ require(weth.transfer(pair, amountETH), "Router: WETH_TRANSFER_FAILED");
 
 
 
-03. 
-
-
-
-## No per-hop slippage check in multi-hop swap
+03. ## 🟡`No per-hop slippage check in multi-hop swap`
 
 ## Affected files
 `contracts/contracts/Router.sol` 
@@ -195,9 +186,7 @@ Add a pair-existence check inside `getAmountsOut()`, or add per-hop minimums / r
 
 ***
 
-04. 
-
-## No per-hop slippage check in multi-hop swap
+04. ## 🟡 `No per-hop slippage check in multi-hop swap`
 
 ## Affected files
 `contracts/contracts/Router.sol` 
@@ -217,3 +206,63 @@ Worse execution price, misleading revert, and extra gas wasted.
 ## Recommendation
 Add a pair-existence check in `getAmountsOut()`, or use per-hop minimums / re-quote at execution. 
 
+
+
+
+Yes — here is the **short** Zealynx-style version for that finding. [academy.zealynx](https://academy.zealynx.io/shadow-arena/velodrome/audit)
+
+## Title
+`Division by zero in stable-swap solver for empty pools`
+
+## Severity
+`Medium`
+
+## Affected files
+`contracts/contracts/VelodromeLibrary.sol`, and any caller that uses the stable quote path. [academy.zealynx](https://academy.zealynx.io/shadow-arena/velodrome/audit)
+
+## Affected functions
+`_get_y(...)`, and the public quote helpers that reach it through stable-swap math. [academy.zealynx](https://academy.zealynx.io/shadow-arena/velodrome/audit)
+
+## Description
+`_get_y()` divides by `_d(x0, y)`, and that denominator becomes zero when the pool is empty or fully imbalanced. In that case the quote reverts instead of returning a safe result. [academy.zealynx](https://academy.zealynx.io/shadow-arena/velodrome/audit)
+
+## Vulnerable scenario
+A user queries a stable pair with zero reserves or near-zero reserves, the solver hits division by zero, and the quote fails. [academy.zealynx](https://academy.zealynx.io/shadow-arena/velodrome/audit)
+
+## Impact
+Broken quotes, failed integrations, and poor availability for thin or empty pools. [academy.zealynx](https://academy.zealynx.io/shadow-arena/velodrome/audit)
+
+## Recommendation
+Add a zero-reserve guard before entering the Newton solver, and revert with a clear error instead of relying on a division-by-zero panic. [academy.zealynx](https://academy.zealynx.io/shadow-arena/velodrome/audit)
+
+## Notes
+- `getMinimumValue` has unused destructured values, but that is just dead code, not a bug.  
+- The `// TODO make modifiable?` comment suggests unfinished design intent, but it is not exploitable by itself. [academy.zealynx](https://academy.zealynx.io/shadow-arena/velodrome/audit)
+
+
+Here’s a short, Zealynx‑style version. [academy.zealynx](https://academy.zealynx.io/shadow-arena/velodrome/audit)
+
+## Title
+`Incorrect output due to extra normalization division in quoting functions`
+
+## Severity
+`Medium`
+
+## Affected files
+`contracts/contracts/VelodromeLibrary.sol` (or wherever these functions are defined) [academy.zealynx](https://academy.zealynx.io/shadow-arena/velodrome/audit)
+
+## Affected functions
+`getAmountOut(...)`  
+`getTradeDiff(...)` (both overloads)  
+`getSample(...)`
+
+## Description
+These functions call `_getAmountOut` (which already returns the correct token‑out amount) and then divide again by `amountIn` or `sample` with `* 1e18 / amountIn` (or `/ sample`). This converts the result into a price ratio instead of an amount, so callers expecting “amount of tokens out” receive a wrong value. It also introduces implicit division‑by‑zero panics when `amountIn` or `sample` is zero. 
+
+## Impact
+- Off‑chain integrators or contracts using these helpers may size swaps or set slippage based on incorrect outputs.  
+- This can remove effective slippage protection or misprice positions/collateral.  
+- Zero‑input or thin/imbalanced pools can trigger division‑by‑zero panics, hurting composability.
+
+## Recommendation
+Return `_getAmountOut(...)` directly and remove the extra `* 1e18 / amountIn` / `/ sample` normalization from all four functions. If a price ratio is needed, expose it in a separate, clearly named helper that explicitly handles zero denominators.
