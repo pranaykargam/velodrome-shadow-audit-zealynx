@@ -92,8 +92,7 @@ Not a crash bug, but worth flagging: _update0/_update1 assume the full amount th
 
 01. 
 
-## Title
-`Pair invariant accounting breaks for fee-on-transfer / rebasing tokens`
+## Pair invariant accounting breaks for fee-on-transfer / rebasing tokens
 
 ## Severity-  (low)
 
@@ -119,8 +118,9 @@ The pair logic assumes that a token transfer of `amount` always credits exactly 
 2. The pair records reserves as if transfers are exact.  
 3. A swap or liquidity action happens, but the actual credited balance differs from the amount used in the math.  
 4. The pair’s invariant checks and reserve updates operate on misleading values, so LP accounting becomes incorrect. 
-## Impact
 
+
+## Impact
 - LPs can end up with incorrect reserve accounting.  
 - Price quotes can become misleading.  
 - Liquidity may be under-collateralized relative to the pair’s internal accounting.  
@@ -136,10 +136,9 @@ The pair logic assumes that a token transfer of `amount` always credits exactly 
 ***
 
 02. 
-Use a **low severity** finding. 
 
-## Title
-`WETH transfer uses assert() instead of require()`
+
+## WETH transfer uses assert() instead of require()
 
 ## Severity
 `Low`
@@ -173,8 +172,7 @@ require(weth.transfer(pair, amountETH), "Router: WETH_TRANSFER_FAILED");
 
 
 
-## Title
-`No per-hop slippage check in multi-hop swap`
+## No per-hop slippage check in multi-hop swap
 
 ## Affected files
 `contracts/contracts/Router.sol` 
@@ -199,8 +197,7 @@ Add a pair-existence check inside `getAmountsOut()`, or add per-hop minimums / r
 
 04. 
 
-## Title
-`No per-hop slippage check in multi-hop swap`
+## No per-hop slippage check in multi-hop swap
 
 ## Affected files
 `contracts/contracts/Router.sol` 
