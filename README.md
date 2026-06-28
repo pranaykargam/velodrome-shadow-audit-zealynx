@@ -1,3 +1,8 @@
+
+
+<img src="./images/image01">  
+
+
 # Velodrome Finance
 
 Velodrome is a next-generation AMM on Optimism, forked from Solidly (ve(3,3) model). It combines a Uniswap V2-style constant product AMM with a vote-escrow token economics layer where veNFT holders direct emissions to liquidity pools.
