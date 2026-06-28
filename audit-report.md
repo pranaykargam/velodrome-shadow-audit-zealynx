@@ -1,6 +1,4 @@
 
-
-
 ***
 
 ### Issue 1 — Permissionless claimFees()
