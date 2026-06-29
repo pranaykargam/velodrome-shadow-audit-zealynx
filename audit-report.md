@@ -1,4 +1,3 @@
-
 ***
 
 ### Issue 1 — Permissionless claimFees()
@@ -209,47 +208,45 @@ Add a pair-existence check in `getAmountsOut()`, or use per-hop minimums / re-qu
 
 
 
-Yes — here is the **short** Zealynx-style version for that finding. [academy.zealynx](https://academy.zealynx.io/shadow-arena/velodrome/audit)
+# VelodromeLibrary.sol
 
-## Title
-`Division by zero in stable-swap solver for empty pools`
+## `Division by zero in stable-swap solver for empty pools`
 
 ## Severity
 `Medium`
 
 ## Affected files
-`contracts/contracts/VelodromeLibrary.sol`, and any caller that uses the stable quote path. [academy.zealynx](https://academy.zealynx.io/shadow-arena/velodrome/audit)
+`contracts/contracts/VelodromeLibrary.sol`, and any caller that uses the stable quote path.
 
 ## Affected functions
-`_get_y(...)`, and the public quote helpers that reach it through stable-swap math. [academy.zealynx](https://academy.zealynx.io/shadow-arena/velodrome/audit)
+`_get_y(...)`, and the public quote helpers that reach it through stable-swap math.
 
 ## Description
-`_get_y()` divides by `_d(x0, y)`, and that denominator becomes zero when the pool is empty or fully imbalanced. In that case the quote reverts instead of returning a safe result. [academy.zealynx](https://academy.zealynx.io/shadow-arena/velodrome/audit)
+`_get_y()` divides by `_d(x0, y)`, and that denominator becomes zero when the pool is empty or fully imbalanced. In that case the quote reverts instead of returning a safe result.
 
 ## Vulnerable scenario
-A user queries a stable pair with zero reserves or near-zero reserves, the solver hits division by zero, and the quote fails. [academy.zealynx](https://academy.zealynx.io/shadow-arena/velodrome/audit)
+A user queries a stable pair with zero reserves or near-zero reserves, the solver hits division by zero, and the quote fails. 
 
 ## Impact
-Broken quotes, failed integrations, and poor availability for thin or empty pools. [academy.zealynx](https://academy.zealynx.io/shadow-arena/velodrome/audit)
+Broken quotes, failed integrations, and poor availability for thin or empty pools.
 
 ## Recommendation
-Add a zero-reserve guard before entering the Newton solver, and revert with a clear error instead of relying on a division-by-zero panic. [academy.zealynx](https://academy.zealynx.io/shadow-arena/velodrome/audit)
+Add a zero-reserve guard before entering the Newton solver, and revert with a clear error instead of relying on a division-by-zero panic. 
 
 ## Notes
 - `getMinimumValue` has unused destructured values, but that is just dead code, not a bug.  
-- The `// TODO make modifiable?` comment suggests unfinished design intent, but it is not exploitable by itself. [academy.zealynx](https://academy.zealynx.io/shadow-arena/velodrome/audit)
+- The `// TODO make modifiable?` comment suggests unfinished design intent, but it is not exploitable by itself.
 
 
-Here’s a short, Zealynx‑style version. [academy.zealynx](https://academy.zealynx.io/shadow-arena/velodrome/audit)
 
-## Title
-`Incorrect output due to extra normalization division in quoting functions`
+
+## `Incorrect output due to extra normalization division in quoting functions`
 
 ## Severity
 `Medium`
 
 ## Affected files
-`contracts/contracts/VelodromeLibrary.sol` (or wherever these functions are defined) [academy.zealynx](https://academy.zealynx.io/shadow-arena/velodrome/audit)
+`contracts/contracts/VelodromeLibrary.sol` (or wherever these functions are defined) 
 
 ## Affected functions
 `getAmountOut(...)`  
