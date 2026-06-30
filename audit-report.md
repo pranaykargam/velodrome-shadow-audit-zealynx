@@ -63,12 +63,6 @@ Code hint:
 
 
 
-
-
-
-
-
-
 # pair.sol
 
 1. `PERMIT_TYPEHASH` — malformed constant (won't compile / wrong digest)
@@ -159,8 +153,6 @@ Replace `assert` with:
 require(weth.transfer(pair, amountETH), "Router: WETH_TRANSFER_FAILED");
 ```
 ***
-
-
 
 03. ## 🟡`No per-hop slippage check in multi-hop swap`
 
