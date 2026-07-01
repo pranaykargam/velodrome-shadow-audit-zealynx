@@ -9,4 +9,4 @@ interface IBribe {
     function rewards(uint i) view external returns (address);
     function addRewardToken(address token) external;
     function swapOutRewardToken(uint i, address oldToken, address newToken) external;
-}
+}  

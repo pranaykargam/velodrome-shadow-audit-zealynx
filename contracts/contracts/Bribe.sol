@@ -27,6 +27,10 @@ contract Bribe is IBribe {
       _unlocked = 1;
   }
 
+// @auditbug(not found)🔴 Gauge-setup can be front-run due to missing caller check
+// @auditnotes
+// Missing access control: anyone can call setGauge() before the factory.
+// Restrict the caller (e.g., onlyFactory) to prevent front-running during initialization.
   function setGauge(address _gauge) external {
     require(gauge == address(0), "gauge already set");
     gauge = _gauge;
@@ -38,6 +42,13 @@ contract Bribe is IBribe {
     return timestamp < bribeEnd ? bribeStart : bribeStart + 7 days;
   }
 
+// @auditbug🔴 medium 
+// @auditnotes
+// notifyRewardAmount() is permissionless, so anyone can add arbitrary ERC20 tokens.
+// Attackers can fill the bounded rewards[] array with junk and block legitimate reward tokens.
+//
+// @recommendation
+// Restrict new reward tokens with access control or a whitelist, or require a meaningful minimum deposit.
   function notifyRewardAmount(address token, uint amount) external lock {
       require(amount > 0);
       if (!isReward[token]) {
@@ -47,6 +58,11 @@ contract Bribe is IBribe {
       uint adjustedTstamp = getEpochStart(block.timestamp);
       uint epochRewards = tokenRewardsPerEpoch[token][adjustedTstamp];
 
+
+// @auditbug🔴 medium 
+// @auditbug notifyRewardAmount() records the declared `amount` before checking the actual tokens received, so fee-on-transfer tokens make `tokenRewardsPerEpoch` larger than the real balance and can permanently lock rewards.
+// @recommendation Measure the balance delta and store `received = balanceAfter - balanceBefore`, or explicitly reject fee-on-transfer tokens in `notifyRewardAmount()`.
+// @auditnotes Future audits should flag any token deposit flow that trusts the input `amount` instead of actual received balance, especially when the contract later distributes or withdraws those tokens.
       _safeTransferFrom(token, msg.sender, address(this), amount);
       tokenRewardsPerEpoch[token][adjustedTstamp] = epochRewards + amount;
 
@@ -80,6 +96,7 @@ contract Bribe is IBribe {
     rewards[i] = newToken;
   }
 
+// @audit 2 bugs 
   function deliverReward(address token, uint epochStart) external lock returns (uint) {
     require(msg.sender == gauge);
     uint rewardPerEpoch = tokenRewardsPerEpoch[token][epochStart];

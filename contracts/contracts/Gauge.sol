@@ -596,7 +596,7 @@ function getReward(address account, address[] memory tokens) external lock {
     }
 
 
-// @audit notifyRewardAmount(address token, uint amount) — permissionless
+// 🔴 (not found)@audit notifyRewardAmount(address token, uint amount) — permissionless
     function notifyRewardAmount(address token, uint amount) external lock {
         require(token != stake);
         require(amount > 0);
