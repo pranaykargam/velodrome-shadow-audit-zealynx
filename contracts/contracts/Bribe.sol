@@ -97,6 +97,13 @@ contract Bribe is IBribe {
   }
 
 // @audit 2 bugs 
+
+// @audit notes 
+// the contract pays rewards only if someone remembers to collect them in time, and missed rewards get stuck forever.
+
+// deliverReward() does not clear the claimed epoch reward, so the same reward can be claimed again.
+// Recommendation: Set tokenRewardsPerEpoch[token][epochStart] = 0 after transfer.
+// Future checks: Whenever a function reads a stored value and pays it out, check whether the state is reset after use to prevent double-claim or replay issues.
   function deliverReward(address token, uint epochStart) external lock returns (uint) {
     require(msg.sender == gauge);
     uint rewardPerEpoch = tokenRewardsPerEpoch[token][epochStart];
